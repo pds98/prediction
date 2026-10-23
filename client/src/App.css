@@ -1,0 +1,261 @@
+/* ===== Mise en page générale ===== */
+.atelier {
+  max-width: 1150px;
+  margin: 0 auto;
+  padding: 20px 16px 40px;
+}
+
+header h1 {
+  margin: 0 0 4px;
+  font-size: 1.8rem;
+}
+
+header p {
+  margin: 0 0 16px;
+  color: #4b5563;
+}
+
+/* ===== Onglets ===== */
+.onglets {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.onglets button {
+  padding: 10px 18px;
+  border: 1px solid #cbd5e1;
+  border-radius: 999px;
+  background: white;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.onglets button.actif {
+  background: #1f2937;
+  color: white;
+  border-color: #1f2937;
+}
+
+/* ===== Grille : graphique à gauche, contrôles à droite ===== */
+.grille {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
+  gap: 16px;
+}
+
+@media (max-width: 900px) {
+  .grille {
+    grid-template-columns: 1fr;
+  }
+}
+
+.carte {
+  background: white;
+  border-radius: 14px;
+  padding: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.carte h2 {
+  font-size: 1.05rem;
+  margin: 0 0 10px;
+}
+
+.bloc {
+  padding: 12px 0;
+  border-top: 1px solid #e5e7eb;
+}
+
+.bloc:first-child {
+  border-top: none;
+  padding-top: 0;
+}
+
+svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* ===== Points et courbes ===== */
+.pt-entr {
+  fill: #16a34a;   /* entraînement : vert plein */
+}
+
+.pt-test {
+  fill: none;      /* test : orange creux */
+  stroke: #ea580c;
+  stroke-width: 2;
+}
+
+.pt-neutre {
+  fill: #94a3b8;
+}
+
+.courbe-modele {
+  fill: none;
+  stroke: #2563eb;
+  stroke-width: 2.5;
+}
+
+.droite-gd {
+  stroke: #db2777;  /* descente de gradient : rose */
+  stroke-width: 3;
+}
+
+.courbe-perte {
+  fill: none;
+  stroke: #db2777;  /* courbe de perte : rose */
+  stroke-width: 2;
+}
+
+.axe {
+  stroke: #9ca3af;
+}
+
+.graduation {
+  font-size: 11px;
+  fill: #6b7280;
+}
+
+.titre-axe {
+  font-size: 12px;
+  fill: #374151;
+}
+
+/* ===== Légende ===== */
+.legende {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  font-size: 0.85rem;
+  margin-top: 8px;
+}
+
+.legende span::before {
+  content: "";
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  margin-right: 6px;
+  vertical-align: -1px;
+  border-radius: 50%;
+}
+
+.leg-entr::before { background: #16a34a; }
+.leg-test::before { border: 2px solid #ea580c; }
+.leg-modele::before { background: #2563eb; border-radius: 2px !important; height: 4px !important; vertical-align: 3px !important; }
+.leg-gd::before { background: #db2777; border-radius: 2px !important; height: 4px !important; vertical-align: 3px !important; }
+
+/* ===== Contrôles ===== */
+button.principal {
+  padding: 9px 16px;
+  border: none;
+  border-radius: 8px;
+  background: #2563eb;
+  color: white;
+  font-size: 0.95rem;
+  cursor: pointer;
+}
+
+button.principal:disabled {
+  background: #9ca3af;
+  cursor: not-allowed;
+}
+
+label {
+  display: block;
+  font-size: 0.9rem;
+  margin: 8px 0 4px;
+}
+
+input[type="range"] {
+  width: 100%;
+}
+
+input[type="number"],
+select {
+  padding: 6px 8px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  font-size: 0.95rem;
+}
+
+.formulaire {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: end;
+}
+
+.formulaire input {
+  width: 110px;
+}
+
+table.chiffres {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+table.chiffres td,
+table.chiffres th {
+  padding: 4px 6px;
+  text-align: right;
+}
+
+table.chiffres td:first-child,
+table.chiffres th:first-child {
+  text-align: left;
+}
+
+.deux-pentes {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin: 10px 0;
+}
+
+.deux-pentes div {
+  background: #f9fafb;
+  border-radius: 8px;
+  padding: 8px;
+  text-align: center;
+}
+
+.deux-pentes strong {
+  display: block;
+  font-size: 1.4rem;
+}
+
+/* ===== Messages ===== */
+.alerte {
+  background: #fef3c7;
+  color: #92400e;
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin: 10px 0 0;
+  font-size: 0.9rem;
+}
+
+.erreur {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.info {
+  background: #e0f2fe;
+  color: #075985;
+}
+
+.petit {
+  font-size: 0.82rem;
+  color: #6b7280;
+}
+
+footer {
+  margin-top: 18px;
+  text-align: center;
+  font-weight: 600;
+}

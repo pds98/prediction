@@ -1,0 +1,9 @@
+# Dépendances et fichiers générés
+node_modules/
+dist/
+*.log
+
+# Fichiers de l'éditeur et du système
+.idea/
+.vscode/
+.DS_Store
