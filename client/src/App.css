@@ -80,11 +80,11 @@ svg {
 
 /* ===== Points et courbes ===== */
 .pt-entr {
-  fill: #16a34a;   /* entraînement : vert plein */
+  fill: #16a34a;
 }
 
 .pt-test {
-  fill: none;      /* test : orange creux */
+  fill: none;
   stroke: #ea580c;
   stroke-width: 2;
 }
@@ -100,13 +100,13 @@ svg {
 }
 
 .droite-gd {
-  stroke: #db2777;  /* descente de gradient : rose */
+  stroke: #db2777;
   stroke-width: 3;
 }
 
 .courbe-perte {
   fill: none;
-  stroke: #db2777;  /* courbe de perte : rose */
+  stroke: #db2777;
   stroke-width: 2;
 }
 

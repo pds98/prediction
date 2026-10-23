@@ -1,7 +1,4 @@
-# Lance les 3 services d'une seule commande :
-#   docker compose up --build
 services:
-  # ----- Base de données PostgreSQL -----
   db:
     image: postgres:16-alpine
     environment:
@@ -9,33 +6,28 @@ services:
       POSTGRES_PASSWORD: atelier
       POSTGRES_DB: atelier
     volumes:
-      - donnees:/var/lib/postgresql/data # les points survivent aux redémarrages
-    healthcheck: # la base est-elle prête à répondre ?
+      - donnees:/var/lib/postgresql/data
+    healthcheck:
       test: ["CMD-SHELL", "pg_isready -U atelier -d atelier"]
       interval: 3s
       timeout: 3s
       retries: 10
 
-  # ----- API Express -----
   api:
     build: ./server
     environment:
       PORT: 4006
-      # « db » est le nom du service ci-dessus : c'est son adresse dans le réseau Docker
       DATABASE_URL: postgres://atelier:atelier@db:5432/atelier
-      # Jeton secret exigé pour effacer tous les points : à remplacer par une valeur à soi
-      ADMIN_TOKEN: 609777184206d59cd7f6e22b1a5bffdf
+      ADMIN_TOKEN: ${ADMIN_TOKEN}
     ports:
-      - "4006:4006" # port de l'ordinateur : port du conteneur
+      - "4006:4006"
     depends_on:
       db:
-        condition: service_healthy # attend que la base soit vraiment prête
+        condition: service_healthy
 
-  # ----- Client React -----
   client:
     build: ./client
     environment:
-      # C'est le navigateur qui appelle l'API : donc localhost, et non « api »
       VITE_API_URL: http://localhost:4006
     ports:
       - "5176:5176"

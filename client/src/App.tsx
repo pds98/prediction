@@ -1,15 +1,3 @@
-/**
- * App.tsx : l'interface de l'Atelier de la prédiction.
- * Affiche les données et réagit aux actions du visiteur.
- * Tous les calculs viennent de stats.ts (aucune bibliothèque de ML).
- *
- * Organisation du composant :
- *   1) l'état (useState)       ce que le visiteur a choisi
- *   2) les valeurs dérivées    les calculs (useMemo)
- *   3) les effets (useEffect)  le serveur et l'animation
- *   4) les actions             ce que font les boutons
- *   5) l'affichage (JSX)       le dessin
- */
 import { useEffect, useMemo, useState } from "react";
 import "./App.css";
 import {
@@ -19,47 +7,39 @@ import {
 } from "./stats";
 import type { Point, Droite, ResultatDescente } from "./stats";
 
-// ---------------------------------------------------------------------
-// Constantes
-// ---------------------------------------------------------------------
 const API = import.meta.env.VITE_API_URL ?? "http://localhost:4006";
-const GRAINE_DECOUPAGE = 7; // graine fixe : le découpage 70/30 est toujours le même
-const MIN_POINTS = 6;       // en dessous, l'analyse n'a pas de sens
-const NB_ITERATIONS = 100;  // nombre de pas de la descente de gradient
+const GRAINE_DECOUPAGE = 7;
+const MIN_POINTS = 6;
+const NB_ITERATIONS = 100;
 
-// Dimensions du graphique principal (unités SVG)
+// Graphique principal (unités SVG)
 const L = 600;
 const H = 380;
-const ZONE = { gauche: 55, droite: L - 20, haut: 20, bas: H - 45 }; // zone de tracé
+const ZONE = { gauche: 55, droite: L - 20, haut: 20, bas: H - 45 };
 
-// Dimensions de la petite courbe de perte
+// Courbe de perte
 const LP = 300;
 const HP = 110;
 
 type Onglet = "synthetique" | "kiosque";
 type EtatServeur = "chargement" | "ok" | "injoignable";
 
-/** Tout ce que l'écran affiche, calculé à partir des points. */
 interface Analyse {
   entrainement: Point[];
   test: Point[];
   moyX: number; medX: number; sdX: number;
   moyY: number; medY: number; sdY: number;
-  r: number;                     // corrélation sur tous les points
-  exacte: Droite;                // régression linéaire exacte (entraînement)
-  degreEffectif: number;         // degré réellement utilisé
-  courbe: (x: number) => number; // le modèle polynomial, prêt à prédire
-  erreurEntr: number;            // MSE sur l'entraînement
-  erreurTest: number;            // MSE sur le test
-  r2Test: number;                // R² sur le test
+  r: number;
+  exacte: Droite;
+  degreEffectif: number;
+  courbe: (x: number) => number;
+  erreurEntr: number;
+  erreurTest: number;
+  r2Test: number;
   surapprentissage: boolean;
 }
 
-// ---------------------------------------------------------------------
-// Fonctions utilitaires
-// ---------------------------------------------------------------------
-
-/** Format québécois : 2,35 au lieu de 2.35. */
+/** Nombre au format fr-CA (virgule décimale). */
 function fmt(v: number, decimales = 2): string {
   if (!Number.isFinite(v)) return "∞";
   return v.toLocaleString("fr-CA", {
@@ -68,7 +48,6 @@ function fmt(v: number, decimales = 2): string {
   });
 }
 
-/** Traduit r en une phrase compréhensible pour un visiteur. */
 function interpreterR(r: number): string {
   const a = Math.abs(r);
   if (a < 0.2) return "lien linéaire très faible ou absent";
@@ -76,14 +55,12 @@ function interpreterR(r: number): string {
   return `lien linéaire ${force} et ${r > 0 ? "croissant" : "décroissant"}`;
 }
 
-/** Garde une coordonnée dans des limites raisonnables (évite les nombres géants). */
+/** Limite les coordonnées SVG quand une courbe s'emballe. */
 const borne = (v: number) => Math.max(-2000, Math.min(2000, v));
 
-/** n + 1 graduations régulières entre min et max. */
 const graduations = (min: number, max: number, n = 5) =>
   Array.from({ length: n + 1 }, (_, i) => min + (i * (max - min)) / n);
 
-/** La plage des axes : fixe pour le kiosque, adaptée aux données pour le jeu synthétique. */
 function calculerDomaine(points: Point[], onglet: Onglet) {
   if (onglet === "kiosque") return { xMin: 0, xMax: 24, yMin: 0, yMax: 100 };
   const ys = points.map((p) => p.y);
@@ -95,27 +72,20 @@ function calculerDomaine(points: Point[], onglet: Onglet) {
   };
 }
 
-// ---------------------------------------------------------------------
-// Composant principal
-// ---------------------------------------------------------------------
 export default function App() {
-  // ----- 1) L'état : chaque changement redessine l'écran -----
   const [onglet, setOnglet] = useState<Onglet>("synthetique");
-  const [graine, setGraine] = useState(1);      // « Nouveau tirage » l'incrémente
-  const [nbPoints, setNbPoints] = useState(40); // 40 ou 400 points
+  const [graine, setGraine] = useState(1);
+  const [nbPoints, setNbPoints] = useState(40);
   const [pointsKiosque, setPointsKiosque] = useState<Point[]>([]);
   const [etatServeur, setEtatServeur] = useState<EtatServeur>("chargement");
   const [degre, setDegre] = useState(1);
   const [pas, setPas] = useState(0.1);
   const [resultat, setResultat] = useState<ResultatDescente | null>(null);
-  const [etape, setEtape] = useState(0);        // étape affichée de l'animation
+  const [etape, setEtape] = useState(0);
   const [heures, setHeures] = useState("");
   const [batterie, setBatterie] = useState("");
   const [message, setMessage] = useState("");
 
-  // ----- 2) Les valeurs dérivées : recalculées seulement quand leurs entrées changent -----
-
-  // Les points affichés dépendent de l'onglet
   const points = useMemo<Point[]>(
     () => (onglet === "synthetique" ? genererSynthetique(nbPoints, graine) : pointsKiosque),
     [onglet, nbPoints, graine, pointsKiosque]
@@ -123,7 +93,6 @@ export default function App() {
 
   const domaine = useMemo(() => calculerDomaine(points, onglet), [points, onglet]);
 
-  // Toute l'analyse statistique, ou un message si elle est impossible
   const analyse = useMemo<Analyse | string>(() => {
     if (points.length < MIN_POINTS) return `Il faut au moins ${MIN_POINTS} points`;
 
@@ -138,8 +107,7 @@ export default function App() {
     try {
       const exacte = linreg(xsE, ysE);
 
-      // Un polynôme de degré d exige au moins d + 1 valeurs de x différentes.
-      // Au kiosque, beaucoup de visiteurs entrent les mêmes heures : on adapte le degré.
+      // Un degré d exige au moins d + 1 valeurs de x distinctes.
       const nbXDistincts = new Set(xsE).size;
       const degreEffectif = Math.max(1, Math.min(degre, nbXDistincts - 1));
       const poly = polyfit(xsE, ysE, degreEffectif);
@@ -155,7 +123,6 @@ export default function App() {
         r: pearson(xsTous, ysTous),
         exacte, degreEffectif, courbe, erreurEntr, erreurTest,
         r2Test: r2(ysT, xsT.map(courbe)),
-        // Surapprentissage : modèle complexe ET erreur de test bien plus grande
         surapprentissage: degreEffectif >= 3 && erreurTest > 2 * erreurEntr,
       };
     } catch (e) {
@@ -163,11 +130,8 @@ export default function App() {
     }
   }, [points, degre]);
 
-  // ----- 3) Les effets -----
-
-  // a) Au démarrage : charger les points du kiosque depuis le serveur
   useEffect(() => {
-    let annule = false; // évite de modifier l'état si le composant a disparu
+    let annule = false;
     fetch(`${API}/api/points`)
       .then((rep) => {
         if (!rep.ok) throw new Error("Réponse invalide");
@@ -186,22 +150,21 @@ export default function App() {
     };
   }, []);
 
-  // b) L'animation : avancer d'une étape toutes les 40 ms
+  // Animation de l'entraînement : une étape toutes les 40 ms
   useEffect(() => {
     if (!resultat) return;
     const id = window.setInterval(() => {
       setEtape((e) => {
         if (e >= resultat.etapes.length - 1) {
-          window.clearInterval(id); // fin de l'animation
+          window.clearInterval(id);
           return e;
         }
         return e + 1;
       });
     }, 40);
-    return () => window.clearInterval(id); // nettoyage si on relance
+    return () => window.clearInterval(id);
   }, [resultat]);
 
-  // ----- 4) Les actions -----
   function changerOnglet(o: Onglet) {
     setOnglet(o);
     setResultat(null);
@@ -209,13 +172,13 @@ export default function App() {
   }
 
   function nouveauTirage() {
-    setGraine((g) => g + 1); // nouvelle graine = nouveaux points
+    setGraine((g) => g + 1);
     setResultat(null);
   }
 
   function changerPas(v: number) {
     setPas(v);
-    setResultat(null); // un autre pas = un autre entraînement
+    setResultat(null);
   }
 
   function entrainer() {
@@ -223,12 +186,11 @@ export default function App() {
     const xsE = analyse.entrainement.map((p) => p.x);
     const ysE = analyse.entrainement.map((p) => p.y);
     setResultat(gradientDescentLinear(xsE, ysE, pas, NB_ITERATIONS));
-    setEtape(0); // l'animation repart du début
+    setEtape(0);
   }
 
   async function ajouterPoint() {
-    // Validation côté navigateur (le serveur revérifie de son côté).
-    // On accepte la virgule comme séparateur décimal.
+    // Le serveur revalide aussi ; la virgule décimale est acceptée.
     const h = Number(heures.replace(",", "."));
     const b = Number(batterie.replace(",", "."));
     if (heures.trim() === "" || !Number.isFinite(h) || h < 0 || h > 24) {
@@ -264,16 +226,13 @@ export default function App() {
     }
   }
 
-  // ----- 5) L'affichage -----
-
-  // Conversion des valeurs mathématiques en pixels SVG.
-  // En SVG, y = 0 est en haut de l'image : d'où l'inversion dans sy.
+  // Valeurs → pixels SVG (en SVG, y = 0 est en haut, d'où l'inversion dans sy)
   const sx = (x: number) =>
     ZONE.gauche + ((x - domaine.xMin) / (domaine.xMax - domaine.xMin)) * (ZONE.droite - ZONE.gauche);
   const sy = (y: number) =>
     ZONE.bas - ((y - domaine.yMin) / (domaine.yMax - domaine.yMin)) * (ZONE.bas - ZONE.haut);
 
-  // Le modèle polynomial, dessiné avec 200 petits segments mis bout à bout
+  // Courbe du modèle : 200 segments
   let cheminModele = "";
   if (typeof analyse !== "string") {
     for (let i = 0; i <= 200; i++) {
@@ -284,12 +243,10 @@ export default function App() {
     }
   }
 
-  // La droite rose de la descente de gradient, à l'étape en cours
   const droiteGD: Droite | null = resultat ? resultat.etapes[etape] : null;
   const animFinie = resultat !== null && etape >= resultat.etapes.length - 1;
   const penteGD = resultat ? (animFinie ? resultat.pente : droiteGD!.pente) : NaN;
 
-  // La courbe de perte jusqu'à l'étape en cours (échelle fixe pendant l'animation)
   let cheminPerte = "";
   if (resultat) {
     const finies = resultat.pertes.filter(Number.isFinite);
@@ -324,17 +281,14 @@ export default function App() {
       </nav>
 
       <main className="grille">
-        {/* ----- Le graphique ----- */}
         <section className="carte">
           <svg viewBox={`0 0 ${L} ${H}`} role="img" aria-label="Nuage de points et modèle">
             <defs>
-              {/* Tout ce qui sort de la zone de tracé est coupé */}
               <clipPath id="zone">
                 <rect x={ZONE.gauche} y={ZONE.haut} width={ZONE.droite - ZONE.gauche} height={ZONE.bas - ZONE.haut} />
               </clipPath>
             </defs>
 
-            {/* Axes et graduations */}
             <line className="axe" x1={ZONE.gauche} y1={ZONE.bas} x2={ZONE.droite} y2={ZONE.bas} />
             <line className="axe" x1={ZONE.gauche} y1={ZONE.haut} x2={ZONE.gauche} y2={ZONE.bas} />
             {graduations(domaine.xMin, domaine.xMax).map((v) => (
@@ -355,7 +309,6 @@ export default function App() {
               {titreY}
             </text>
 
-            {/* Les points : verts pleins (entraînement), orange creux (test) */}
             {typeof analyse === "string"
               ? points.map((p, i) => <circle key={`n${i}`} className="pt-neutre" cx={sx(p.x)} cy={sy(p.y)} r={5} />)
               : (
@@ -369,7 +322,6 @@ export default function App() {
                 </>
               )}
 
-            {/* Les modèles, coupés à la zone de tracé */}
             <g clipPath="url(#zone)">
               {cheminModele && <path className="courbe-modele" d={cheminModele} />}
               {droiteGD && Number.isFinite(droiteGD.pente) && Number.isFinite(droiteGD.ordonnee) && (
@@ -394,9 +346,7 @@ export default function App() {
           {typeof analyse === "string" && <p className="alerte">{analyse}</p>}
         </section>
 
-        {/* ----- Les contrôles ----- */}
         <aside className="carte">
-          {/* Les données */}
           <div className="bloc">
             {onglet === "synthetique" ? (
               <>
@@ -435,7 +385,6 @@ export default function App() {
 
           {typeof analyse !== "string" && (
             <>
-              {/* Décrire les données */}
               <div className="bloc">
                 <h2>Décrire les données</h2>
                 <table className="chiffres">
@@ -450,7 +399,6 @@ export default function App() {
                 <p>Corrélation r = <strong>{fmt(analyse.r)}</strong> : {interpreterR(analyse.r)}.</p>
               </div>
 
-              {/* Complexité du modèle */}
               <div className="bloc">
                 <h2>Complexité du modèle</h2>
                 <label htmlFor="degre">Degré du polynôme : <strong>{degre}</strong></label>
@@ -475,7 +423,6 @@ export default function App() {
                 )}
               </div>
 
-              {/* Apprentissage pas à pas */}
               <div className="bloc">
                 <h2>Apprentissage pas à pas</h2>
                 <label htmlFor="pas">Pas (taux d'apprentissage) : <strong>{fmt(pas)}</strong></label>
